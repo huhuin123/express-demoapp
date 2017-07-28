@@ -26,16 +26,16 @@ module.exports = {
             // 获取前台页面传过来的参数
             var param = req.query || req.params;
             console.log(param);
-
+            console.log(arguments);
+            if(err){
+                console.log(err);
+            }
             // 建立连接，向表中插入值
             // 'INSERT INTO user(id, name, age) VALUES(0,?,?)',
             connection.query(
                 $sql.insert,
                 [param.fw_name, param.fw_ip, param.fw_account, param.fw_psw ,param.fw_location, param.fw_ext],
                 function(err, result) {
-                    if (err) {
-                        console.log(err);
-                    }
 
                     if(result) {
                         result = {

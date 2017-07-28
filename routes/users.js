@@ -12,7 +12,7 @@ router.get('/', function(req, res, next) {
 
 // 增加用户
 //TODO 同时支持get,post
-router.get('/addApplication', function(req, res, next) {
+router.get('/addFirewall', function(req, res, next) {
     userDao.add(req, res, next);
 });
 
@@ -26,7 +26,7 @@ router.get('/query', function(req, res, next) {
     userDao.queryById(req, res, next);
 });
 
-router.get('/deleteUser', function(req, res, next) {
+router.get('/deleteFirewall', function(req, res, next) {
     userDao.delete(req, res, next);
 });
 

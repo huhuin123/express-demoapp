@@ -57,7 +57,10 @@ module.exports = {
     delete: function (req, res, next) {
         // delete by Id
         pool.getConnection(function(err, connection) {
-            var id = +req.query.id;
+            var id = +req.query.fw_id;
+            if(err){
+                console.log(arguments);
+            }
             connection.query($sql.delete, id, function(err, result) {
                 if(result.affectedRows > 0) {
                     result = {
@@ -74,15 +77,15 @@ module.exports = {
     },
     update: function (req, res, next) {
         // update by id
-        // 为了简单，要求同时传name和age两个参数
+        // 为了简单，要求同时传（fw_account,fw_psw,fw_location,fw_ext）4个参数
         var param = req.body;
-        if(param.name == null || param.age == null || param.id == null) {
+        if(param.fw_account == null || param.fw_psw == null ||param.fw_location|| param.fw_id == null) {
             jsonWrite(res, undefined);
             return;
         }
 
         pool.getConnection(function(err, connection) {
-            connection.query($sql.update, [param.name, param.age, +param.id], function(err, result) {
+            connection.query($sql.update, [param.fw_account, param.fw_psw,param.fw_location,param.fw_ext +param.fw_id], function(err, result) {
                 // 使用页面进行跳转提示
                 if(result.affectedRows > 0) {
                     res.render('suc', {

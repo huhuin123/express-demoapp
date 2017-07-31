@@ -8,6 +8,10 @@ var bodyParser = require('body-parser');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 
+var application = require('./routes/application');
+
+var server = require('./routes/server');
+
 var app = express();
 
 // view engine setup
@@ -29,6 +33,10 @@ app.use(logger('combined', {stream: accessLogStream}));
 
 app.use('/', routes);
 app.use('/p/users', users); // 自定义cgi路径
+
+app.use('/p/application', application);  //自定义application调用路径
+
+app.use('/p/server',server); //自定义server调用路径
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

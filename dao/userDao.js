@@ -77,28 +77,38 @@ module.exports = {
     },
     update: function (req, res, next) {
         // update by id
-        // 为了简单，要求同时传（fw_account,fw_psw,fw_location,fw_ext）4个参数
+        // 为了简单，要求同时传（fw_id,fw_name,fw_ip,fw_account,fw_psw,fw_location,fw_ext）7个参数
         var param = req.body;
-        if(param.fw_account == null || param.fw_psw == null ||param.fw_location|| param.fw_id == null) {
+        if(param.fw_name == null || param.fw_ip ==null || param.fw_account == null || param.fw_psw == null || param.fw_location == null || param.fw_id == null) {
             jsonWrite(res, undefined);
             return;
         }
-
+        
         pool.getConnection(function(err, connection) {
-            connection.query($sql.update, [param.fw_account, param.fw_psw,param.fw_location,param.fw_ext +param.fw_id], function(err, result) {
-                // 使用页面进行跳转提示
-                if(result.affectedRows > 0) {
-                    res.render('suc', {
-                        result: result
-                    }); // 第二个参数可以直接在jade中使用
-                } else {
-                    res.render('fail',  {
-                        result: result
-                    });
-                }
-                console.log(result);
+            connection.query(
+                $sql.update,
+                [
+                    param.fw_name, param.fw_ip, param.fw_account, param.fw_psw,
+                    param.fw_location, param.fw_ext, +param.fw_id
+                ],
+                function(err, result) {
+                    if (err) {
+                        console.log(err);
+                    }
+                    
+                    // 使用页面进行跳转提示
+                    if(result.affectedRows > 0) {
+                        res.render('suc', {
+                            result: result
+                        }); // 第二个参数可以直接在jade中使用
+                    } else {
+                        res.render('fail',  {
+                            result: result
+                        });
+                    }
+                    console.log(result);
 
-                connection.release();
+                    connection.release();
             });
         });
 

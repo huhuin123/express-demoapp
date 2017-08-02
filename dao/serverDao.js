@@ -30,27 +30,24 @@ module.exports = {
                 console.log(err);
             }
             // 建立连接，向表中插入值
-            // 'INSERT INTO server(server_id, app_name,app_manager_name,app_manager_tel,app_status,app_ext) VALUES(0,?,?,?,?,?)',
+            // 'INSERT INTO server(server_id,server_name,server_app_id,server_ext) VALUES(0,?,?,?)',
             connection.query(
                 $sql.insert,
-                [param.app_name, param.app_manager_name, param.app_manager_tel, param.app_status, param.app_ext],
+                [param.server_name, param.server_app_id, param.server_ext],
                 function(err, result) {
-
                     if(result) {
                         result = {
                             code: 200,
                             msg:'增加成功'
                         };    
                     }
-
-
                     // 以json形式，把操作结果返回给前台页面
                     jsonWrite(res, result);
-
                     // 释放连接 
                     connection.release();
                 }
             );
+            console.log(res);
         });
     },
     delete: function (req, res, next) {

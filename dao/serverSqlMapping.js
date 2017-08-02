@@ -2,7 +2,8 @@
 // CRUD SQL语句
 
 var server = {
-    insert: 'INSERT INTO server(server_id, server_name,server_status,server_app_id,server_fw_main_id,server_fw_backup_id) VALUES(0,?,?)；INSERT INTO address_pool(add_id,add_ip,add_pooltype,add_status,) VALUES(0,add_ip,add_pooltype',
+    insert: 'INSERT INTO server(server_id,server_name,server_app_id,server_ext) VALUES(0,?,?,?)',
+    queryByinnerIP:'INSERT INTO address_pool(add_id,add_ip,add_pooltype,add_status,) VALUES(0,add_ip,add_pooltype',
     delete:'delete from application where app_id=?',
     update:'update application set app_name=?, app_manager_name=?, app_manager_tel=?, app_status=?, app_ext=? where app_id=?',        
     queryByAppName: 'select * from application where app_name=?',    

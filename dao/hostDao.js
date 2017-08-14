@@ -3,7 +3,7 @@
 var mysql = require('mysql');
 var $conf = require('../conf/db');
 var $util = require('../util/util');
-var $sql = require('./applicationSqlMapping');
+var $sql = require('./hostSqlMapping');
 
 // 使用连接池，提升性能
 var pool  = mysql.createPool($util.extend({}, $conf.mysql));
@@ -131,8 +131,20 @@ module.exports = {
                 connection.release();
             });
         });
-    }
+    },
+
+    //查询全部地址
+    queryAll: function (req, res, next) {
+        pool.getConnection(function(err, connection) {
+            connection.query($sql.queryAll, function(err, result) {
+                jsonWrite(res, result);
+                connection.release();
+            });
+        });
+    },
     
 };
+
+
 
 

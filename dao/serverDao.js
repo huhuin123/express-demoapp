@@ -47,9 +47,20 @@ module.exports = {
                     connection.release();
                 }
             );
-            console.log(res);
+
+            //queryByAppID:'select app_name from application where app_id=?',     
+
+            // connection.query($sql.queryByAppID, query.app_id, function(err, result) {
+            //     console.log(query.app_id);
+            //     jsonWrite(res, result);
+            //     connection.release();
+            // });
+            //console.log(res);
         });
     },
+    
+
+
     delete: function (req, res, next) {
         // delete by Id
         pool.getConnection(function(err, connection) {
@@ -116,7 +127,6 @@ module.exports = {
             connection.query($sql.queryByAppName, query.app_name, function(err, result) {
                 jsonWrite(res, result);
                 connection.release();
-
             });
         });
     },
@@ -129,6 +139,7 @@ module.exports = {
             });
         });
     },
+    
     queryAll: function (req, res, next) {
         pool.getConnection(function(err, connection) {
             connection.query($sql.queryAll, function(err, result) {
@@ -136,7 +147,16 @@ module.exports = {
                 connection.release();
             });
         });
-    }
+    },
     
-    
+    queryByAppID: function(req, res, next){
+        //通过App ID查App Name
+        var query = req.query;
+        pool.getConnection(function(err,connection) {
+            connection.query($sql.queryByAppID, query.app_id, function(err, result) {
+                jsonWrite(res, result);
+                connection.release();
+            });
+        });
+    },    
 };

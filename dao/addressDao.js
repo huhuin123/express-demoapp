@@ -3,7 +3,7 @@
 var mysql = require('mysql');
 var $conf = require('../conf/db');
 var $util = require('../util/util');
-var $sql = require('./applicationSqlMapping');
+var $sql = require('./addressSqlMapping');
 
 // 使用连接池，提升性能
 var pool  = mysql.createPool($util.extend({}, $conf.mysql));
@@ -21,19 +21,28 @@ var jsonWrite = function (res, ret) {
 };
 
 module.exports = {
+    //新增地址
     add: function (req, res, next) {
         pool.getConnection(function(err, connection) {
             // 获取前台页面传过来的参数
             var param = req.query || req.params;
-            console.log(param);
+            var addServerID;
+            //console.log(param);
             if(err){
                 console.log(err);
             }
+            
+        pool.getConnection(function(err, connection) {
+            connection.query($sql.queryByAddServerName, query.server_name, function(err, result) {
+                addServerID = result;
+            });
+        });
+        console.log(addServerID);
             // 建立连接，向表中插入值
-            // 'INSERT INTO application(app_id, app_name,app_manager_name,app_manager_tel,app_status,app_ext) VALUES(0,?,?,?,?,?)',
+            //'insert into address_pool (add_id,add_ip,add_pooltype,add_status,add_server_id,add_ext) values (0,?,?,?,?,?)',
             connection.query(
                 $sql.insert,
-                [param.app_name, param.app_manager_name, param.app_manager_tel, param.app_status, param.app_ext],
+                [param.add_ip, param.add_pooltype, param.add_status, addServerID, param.add_ext],
                 function(err, result) {
 
                     if(result) {
@@ -53,10 +62,11 @@ module.exports = {
             );
         });
     },
+    //删除地址
     delete: function (req, res, next) {
         // delete by Id
         pool.getConnection(function(err, connection) {
-            var id = +req.query.app_id;
+            var id = +req.query.add_id;
             if(err){
                 console.log(arguments);
             }
@@ -76,22 +86,28 @@ module.exports = {
     },
     update: function (req, res, next) {
         // update by id
-        // 为了简单，要求同时传（app_id, app_name,app_manager_name,app_manager_tel,app_status,app_ext）6个参数
+        // 为了简单，要求同时传（add_id,add_ip,add_pooltype,add_status,server_name,add_ext）5个参数
         var param = req.body;
+        var addServerID;
+        console.log(param);
         if (
-            param.app_name == null || param.app_manager_name == null
-            || param.app_manager_tel == null || param.app_status == null || param.app_id == null
+            param.add_ip == null || param.add_pooltype == null
+            || param.add_status == null || param.server_name == null || param.add_id == null
         ) {
             jsonWrite(res, undefined);
             return;
         }
-
+        pool.getConnection(function(err, connection) {
+            connection.query($sql.queryByAddServerName, query.server_name, function(err, result) {
+                addServerID = result;
+            });
+        });
         pool.getConnection(function(err, connection) {
             connection.query(
                 $sql.update, 
                 [
-                    param.app_name, param.app_manager_name, param.app_manager_tel,
-                    param.app_status, param.app_ext, +param.app_id
+                    param.add_ip, param.add_pooltype, param.add_status,
+                    addServerID, param.add_ext, +param.add_id
                 ], 
                 function(err, result) {
                     console.log(err);
@@ -131,8 +147,32 @@ module.exports = {
                 connection.release();
             });
         });
-    }
+    },
+
+    //查询全部地址
+    queryAll: function (req, res, next) {
+        pool.getConnection(function(err, connection) {
+            connection.query($sql.queryAll, function(err, result) {
+                jsonWrite(res, result);
+                connection.release();
+            });
+        });
+    },
+
+    //根据地址类型和状态查询
+    queryByTypeAndStatus: function (req, res, next) {
+        var query = req.query;
+        console.log(query);
+        pool.getConnection(function(err, connection) {
+            connection.query($sql.queryByTypeAndStatus,query.add_status,query.add_pooltype,function(err, result) {
+                jsonWrite(res, result);
+                connection.release();
+            });
+        });
+    },
     
 };
+
+
 
 

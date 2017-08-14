@@ -6,11 +6,16 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
 var routes = require('./routes/index');
-var users = require('./routes/users');
+
+var firewall = require('./routes/firewall');
 
 var application = require('./routes/application');
 
 var server = require('./routes/server');
+
+var address = require('./routes/address_pool');
+
+var host = require('./routes/host');
 
 var app = express();
 
@@ -32,11 +37,16 @@ var accessLogStream = fs.createWriteStream(__dirname + '/log/access.log', {flags
 app.use(logger('combined', {stream: accessLogStream}));
 
 app.use('/', routes);
-app.use('/p/users', users); // 自定义cgi路径
+
+app.use('/p/firewall', firewall); // 自定义cgi路径
 
 app.use('/p/application', application);  //自定义application调用路径
 
 app.use('/p/server',server); //自定义server调用路径
+
+app.use('/p/host',host); //自定义host调用路径
+
+app.use('/p/address',address); //自定义address调用路径
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

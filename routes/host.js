@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 
-var serverDao = require('../dao/serverDao');
+var hostDao = require('../dao/hostDao');
 
 /* GET users listing. */
 router.get('/', function(req, res, next) {
@@ -9,25 +9,16 @@ router.get('/', function(req, res, next) {
     res.render('updateUser');
 });
 
-
-// 增加服务
-//TODO 同时支持get,post
-router.get('/addServer', function(req, res, next) {
-    serverDao.add(req, res, next);
-});
-
-//根据APP ID查询APP Name
-router.get('/queryByAppID', function(req, res, next) {
-    console.log('查询AppName');
-    serverDao.queryByAppID(req, res, next);
-});
-
-//查询所有server
+//查询全部地址
 router.get('/queryAll', function(req, res, next) {
-    console.log('查询所有user');
-    serverDao.queryAll(req, res, next);
+    hostDao.queryAll(req, res, next);
 });
 
+// 增加用户
+//TODO 同时支持get,post
+router.get('/addApplication', function(req, res, next) {
+    applicationDao.add(req, res, next);
+});
 
 //根据管理员名字查询
 router.get('/queryByManagerName', function(req, res, next) {

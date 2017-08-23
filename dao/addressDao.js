@@ -26,38 +26,45 @@ module.exports = {
         pool.getConnection(function(err, connection) {
             // 获取前台页面传过来的参数
             var param = req.query || req.params;
-            var addServerID;
-            //console.log(param);
-            if(err){
+            
+            if(err) {
                 console.log(err);
             }
-            
-        pool.getConnection(function(err, connection) {
-            connection.query($sql.queryByAddServerName, query.server_name, function(err, result) {
-                addServerID = result;
-            });
-        });
-        console.log(addServerID);
-            // 建立连接，向表中插入值
-            //'insert into address_pool (add_id,add_ip,add_pooltype,add_status,add_server_id,add_ext) values (0,?,?,?,?,?)',
-            connection.query(
-                $sql.insert,
-                [param.add_ip, param.add_pooltype, param.add_status, addServerID, param.add_ext],
-                function(err, result) {
 
-                    if(result) {
-                        result = {
-                            code: 200,
-                            msg:'增加成功'
-                        };    
+            connection.query(
+                $sql.queryByAddServerName,
+                [param.add_server_name],
+                function(err, result) {
+                    if(err) {
+                        console.log(err);
                     }
 
+                    if (result.length > 0) {
+                        var addServerID = result[0].server_id;
+                        connection.query(
+                            $sql.insert,
+                            [param.add_ip, param.add_pooltype, param.add_status, addServerID, param.add_ext],
+                            function(err, result) {
+                                if (err) {
+                                    console.log(err);
+                                }
 
-                    // 以json形式，把操作结果返回给前台页面
-                    jsonWrite(res, result);
+                                if(result) {
+                                    result = {
+                                        code: 200,
+                                        msg:'增加成功'
+                                    };    
+                                }
 
-                    // 释放连接 
-                    connection.release();
+
+                                // 以json形式，把操作结果返回给前台页面
+                                jsonWrite(res, result);
+
+                                // 释放连接 
+                                connection.release();
+                            }
+                        );
+                    }
                 }
             );
         });
@@ -88,8 +95,6 @@ module.exports = {
         // update by id
         // 为了简单，要求同时传（add_id,add_ip,add_pooltype,add_status,server_name,add_ext）5个参数
         var param = req.body;
-        var addServerID;
-        console.log(param);
         if (
             param.add_ip == null || param.add_pooltype == null
             || param.add_status == null || param.server_name == null || param.add_id == null
@@ -98,33 +103,42 @@ module.exports = {
             return;
         }
         pool.getConnection(function(err, connection) {
-            connection.query($sql.queryByAddServerName, query.server_name, function(err, result) {
-                addServerID = result;
-            });
-        });
-        pool.getConnection(function(err, connection) {
             connection.query(
-                $sql.update, 
-                [
-                    param.add_ip, param.add_pooltype, param.add_status,
-                    addServerID, param.add_ext, +param.add_id
-                ], 
+                $sql.queryByAddServerName,
+                [param.server_name],
                 function(err, result) {
-                    console.log(err);
-                    // 使用页面进行跳转提示
-                    if(result.affectedRows > 0) {
-                        res.render('suc', {
-                            result: result
-                        }); // 第二个参数可以直接在jade中使用
-                    } else {
-                        res.render('fail',  {
-                            result: result
+                    console.log(result)
+                    if (result.length > 0) {
+                        var addServerID = result[0].server_id;
+                        connection.query(
+                            $sql.update, 
+                            [
+                                param.add_ip, param.add_pooltype, param.add_status,
+                                addServerID, param.add_ext, +param.add_id
+                            ], 
+                            function(err, result) {
+                                console.log(err);
+                                // 使用页面进行跳转提示
+                                if(result.affectedRows > 0) {
+                                    res.render('suc', {
+                                        result: result
+                                    }); // 第二个参数可以直接在jade中使用
+                                } else {
+                                    res.render('fail',  {
+                                        result: result
+                                    });
+                                }
+                                //console.log(result);
+
+                                connection.release();
                         });
                     }
-                    console.log(result);
-
-                    connection.release();
-            });
+                    else {
+                        jsonWrite(res, undefined);
+                        connection.release();
+                    }
+                }
+            );
         });
 
     },
@@ -164,10 +178,14 @@ module.exports = {
         var query = req.query;
         console.log(query);
         pool.getConnection(function(err, connection) {
-            connection.query($sql.queryByTypeAndStatus,query.add_status,query.add_pooltype,function(err, result) {
-                jsonWrite(res, result);
-                connection.release();
-            });
+            connection.query(
+                $sql.queryByTypeAndStatus,
+                [query.add_status,query.add_pooltype],
+                function(err, result) {
+                    jsonWrite(res, result);
+                    connection.release();
+                }
+            );
         });
     },
     

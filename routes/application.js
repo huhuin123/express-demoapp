@@ -27,6 +27,11 @@ router.get('/queryByAppName', function(req, res, next) {
     applicationDao.queryByAppName(req, res, next);
 });
 
+//查询全部应用
+router.get('/queryAll', function(req, res, next) {
+    applicationDao.queryAll(req, res, next);
+});
+
 router.get('/deleteApplication', function(req, res, next) {
     applicationDao.delete(req, res, next);
 });

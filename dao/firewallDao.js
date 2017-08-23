@@ -26,32 +26,45 @@ module.exports = {
             // 获取前台页面传过来的参数
             var param = req.query || req.params;
             console.log(param);
-            console.log(arguments);
             if(err){
                 console.log(err);
             }
             // 建立连接，向表中插入值
             // 'INSERT INTO user(id, name, age) VALUES(0,?,?)',
             connection.query(
-                $sql.insert,
-                [param.fw_name, param.fw_ip, param.fw_account, param.fw_psw ,param.fw_location, param.fw_ext],
-                function(err, result) {
-
-                    if(result) {
-                        result = {
-                            code: 200,
-                            msg:'增加成功'
-                        };    
+                $sql.queryByName,
+                [param.fw_name],
+                function (err, result) {
+                    if (result.length > 0) {
+                        jsonWrite(res, {
+                            code: '409',
+                            msg: '防火墙名称已存在'
+                        });
+                        connection.release();
                     }
-
-
-                    // 以json形式，把操作结果返回给前台页面
-                    jsonWrite(res, result);
-
-                    // 释放连接 
-                    connection.release();
+                    else {
+                        connection.query(
+                            $sql.insert,
+                            [param.fw_name, param.fw_ip, param.fw_account, param.fw_psw ,param.fw_location, param.fw_ext],
+                            function(err, result) {
+                                if(err){
+                                    console.log(err);
+                                }
+                                if(result) {
+                                    result = {
+                                        code: 200,
+                                        msg:'增加成功'
+                                    };    
+                                }
+                                // 以json形式，把操作结果返回给前台页面
+                                jsonWrite(res, result);
+                                // 释放连接 
+                                connection.release();
+                            }
+                        );
+                    }
                 }
-            );
+            )
         });
     },
     delete: function (req, res, next) {

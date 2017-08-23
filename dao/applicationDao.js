@@ -78,6 +78,7 @@ module.exports = {
         // update by id
         // 为了简单，要求同时传（app_id, app_name,app_manager_name,app_manager_tel,app_status,app_ext）6个参数
         var param = req.body;
+        console.log(req.body);
         if (
             param.app_name == null || param.app_manager_name == null
             || param.app_manager_tel == null || param.app_status == null || param.app_id == null
@@ -112,6 +113,8 @@ module.exports = {
         });
 
     },
+
+    //根据应用名称查询
     queryByAppName: function (req, res, next) {
         var query = req.query;
         //var id = +req.query.id; // 为了拼凑正确的sql语句，这里要转下整数
@@ -123,15 +126,27 @@ module.exports = {
             });
         });
     },
+
+    //根据管理员名称查询
     queryByManagerName: function (req, res, next) {
         var query = req.query;
         pool.getConnection(function(err, connection) {
             connection.query($sql.queryByManagerName, query.app_manager_name,function(err, result) {
+                console.log(query.app_manager_name);
                 jsonWrite(res, result);
                 connection.release();
             });
         });
-    }
+    },
+    //查询全部应用
+    queryAll: function (req, res, next) {
+        pool.getConnection(function(err, connection) {
+            connection.query($sql.queryAll, function(err, result) {
+                jsonWrite(res, result);
+                connection.release();
+            });
+        });
+    },
     
 };
 

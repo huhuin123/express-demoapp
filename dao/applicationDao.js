@@ -4,13 +4,14 @@ var mysql = require('mysql');
 var $conf = require('../conf/db');
 var $util = require('../util/util');
 var $sql = require('./applicationSqlMapping');
+var u = require('underscore');
 
 // 使用连接池，提升性能
 var pool  = mysql.createPool($util.extend({}, $conf.mysql));
 
 // 向前台返回JSON方法的简单封装
 var jsonWrite = function (res, ret) {
-    if(typeof ret === 'undefined') {
+    if (typeof ret === 'undefined') {
         res.json({
             code:'1',
             msg: '操作失败'
@@ -20,125 +21,140 @@ var jsonWrite = function (res, ret) {
     }
 };
 
+var listJsonWrite = function (res, ret, totalCount) {
+    if (typeof ret === 'undefined') {
+        res.json({
+            code:'1',
+            msg: '操作失败'
+        });
+    }
+    else {
+        var results = u.map(
+            ret,
+            function (item) {
+                return {
+                    id: item.app_id,
+                    name: item.app_name,
+                    status: item.app_status,
+                    managerName: item.app_manager_name,
+                    managerTel: item.app_manager_tel,
+                    description: item.app_ext
+                }
+            }
+        );
+        jsonWrite(
+            res,
+            {
+                totalCount: totalCount,
+                results: results
+            }
+        );
+    }
+};
+
+var entityJsonWrite = function (res, ret) {
+    if (typeof ret === 'undefined') {
+        res.json({
+            code:'1',
+            msg: '操作失败'
+        });
+    }
+    else {
+        var result = u.map(
+            ret,
+            function (item) {
+                return {
+                    id: item.app_id,
+                    name: item.app_name,
+                    status: item.app_status,
+                    managerName: item.app_manager_name,
+                    managerTel: item.app_manager_tel,
+                    description: item.app_ext
+                }
+            }
+        );
+        jsonWrite(
+            res,
+            result[0]
+        );
+    }
+};
+
 module.exports = {
-    add: function (req, res, next) {
-        pool.getConnection(function(err, connection) {
-            // 获取前台页面传过来的参数
-            var param = req.query || req.params;
-            console.log(param);
-            if(err){
-                console.log(err);
-            }
-            // 建立连接，向表中插入值
-            // 'INSERT INTO application(app_id, app_name,app_manager_name,app_manager_tel,app_status,app_ext) VALUES(0,?,?,?,?,?)',
-            connection.query(
-                $sql.insert,
-                [param.app_name, param.app_manager_name, param.app_manager_tel, param.app_status, param.app_ext],
-                function(err, result) {
+    /**
+     * 分页列表，带搜索功能
+     * 请求参数
+     *    pageNo 页码，默认null，如不传pageNo，则返回全部列表结果
+     *    pageSize 每页数量，可选，默认‘15’
+     *    keyword 搜索关键词，默认''
+     */
+    search: function (req, res, next) {
+        var params = req.query || req.params;
+        var keyword = params.keyword || '';
+        keyword = '%' + keyword + '%';
+        var pageNo = params.pageNo || null;
+        var pageSize = params.pageSize || '15';
+        var pageStart = 0;
 
-                    if(result) {
-                        result = {
-                            code: 200,
-                            msg:'增加成功'
-                        };    
-                    }
-
-
-                    // 以json形式，把操作结果返回给前台页面
-                    jsonWrite(res, result);
-
-                    // 释放连接 
-                    connection.release();
-                }
-            );
-        });
-    },
-    delete: function (req, res, next) {
-        // delete by Id
-        pool.getConnection(function(err, connection) {
-            var id = +req.query.app_id;
-            if(err){
-                console.log(arguments);
-            }
-            connection.query($sql.delete, id, function(err, result) {
-                if(result.affectedRows > 0) {
-                    result = {
-                        code: 200,
-                        msg:'删除成功'
-                    };
-                } else {
-                    result = void 0;
-                }
-                jsonWrite(res, result);
-                connection.release();
-            });
-        });
-    },
-    update: function (req, res, next) {
-        // update by id
-        // 为了简单，要求同时传（app_id, app_name,app_manager_name,app_manager_tel,app_status,app_ext）6个参数
-        var param = req.body;
-        console.log(req.body);
-        if (
-            param.app_name == null || param.app_manager_name == null
-            || param.app_manager_tel == null || param.app_status == null || param.app_id == null
-        ) {
-            jsonWrite(res, undefined);
-            return;
+        if (pageNo) {
+            pageStart = (+pageNo - 1) * +pageSize;
         }
 
-        pool.getConnection(function(err, connection) {
-            connection.query(
-                $sql.update, 
-                [
-                    param.app_name, param.app_manager_name, param.app_manager_tel,
-                    param.app_status, param.app_ext, +param.app_id
-                ], 
-                function(err, result) {
+        pool.getConnection(
+            function (err, connection) {
+                if (err){
                     console.log(err);
-                    // 使用页面进行跳转提示
-                    if(result.affectedRows > 0) {
-                        res.render('suc', {
-                            result: result
-                        }); // 第二个参数可以直接在jade中使用
-                    } else {
-                        res.render('fail',  {
-                            result: result
-                        });
+                }
+
+                connection.query(
+                    $sql.queryCount,
+                    [keyword, keyword],
+                    function (err, results) {
+                        if (err) {
+                            console.log(err);
+                        }
+
+                        var totalCount = results[0].count;
+
+                        if (pageNo) {
+                            connection.query(
+                                $sql.search,
+                                [keyword, keyword, pageStart, +pageSize],
+                                function (err, results) {
+                                    if (err) {
+                                        console.log(err);
+                                    }
+
+                                    if (results) {
+                                        listJsonWrite(res, results, totalCount);
+                                        connection.release();
+                                    }
+                                }
+                            );
+                        }
+                        else {
+                            pool.getConnection(function(err, connection) {
+                                connection.query(
+                                    $sql.queryAll,
+                                    [keyword, keyword],
+                                    function(err, results) {
+                                        if (results) {
+                                            listJsonWrite(res, results, totalCount);
+                                            connection.release();
+                                        }
+                                    }
+                                );
+                            });
+                        }
                     }
-                    console.log(result);
-
-                    connection.release();
-            });
-        });
-
+                )
+            }
+        );
     },
 
-    //根据应用名称查询
-    queryByAppName: function (req, res, next) {
-        var query = req.query;
-        //var id = +req.query.id; // 为了拼凑正确的sql语句，这里要转下整数
-        pool.getConnection(function(err, connection) {
-            connection.query($sql.queryByAppName, query.app_name, function(err, result) {
-                jsonWrite(res, result);
-                connection.release();
-
-            });
-        });
-    },
-
-    //根据管理员名称查询
-    queryByManagerName: function (req, res, next) {
-        var query = req.query;
-        pool.getConnection(function(err, connection) {
-            connection.query($sql.queryByManagerName, query.app_manager_name,function(err, result) {
-                console.log(query.app_manager_name);
-                jsonWrite(res, result);
-                connection.release();
-            });
-        });
-    },
-    //查询全部应用
+    /**
+     * 不分页列表，一次性获取全部结果
+     */
     queryAll: function (req, res, next) {
         pool.getConnection(function(err, connection) {
             connection.query($sql.queryAll, function(err, result) {
@@ -147,7 +163,118 @@ module.exports = {
             });
         });
     },
-    
+
+    /**
+     * 根据路径ID查询单个实体信息
+     */
+    queryById: function (req, res, next, id) {
+        pool.getConnection(function(err, connection) {
+            connection.query(
+                $sql.queryById,
+                {app_id: id},
+                function(err, result) {
+                    entityJsonWrite(res, result);
+                    connection.release();
+                }
+            );
+        });
+    },
+
+    /**
+     * 批量操作实体集合的状态值
+     * 请求参数
+     *    ids 实体集合的ID数组
+     *    status 目标状态值，目前仅有 0:删除
+     */
+    batchModify: function (req, res, next) {
+        var params = req.body;
+        var ids = params.ids;
+        var status = '' + params.status;
+
+        pool.getConnection(function(err, connection) {
+            connection.query(
+                $sql.batchModify,
+                [{app_status: status}, ids],
+                function(err, result) {
+                    jsonWrite(
+                        res,
+                        {
+                            ids: ids,
+                            status: status
+                        }
+                    );
+                    connection.release();
+                }
+            );
+        });
+    },
+
+    /**
+     * 新增实体
+     * 请求参数
+     *    name 应用名称，字符串，不可重名
+     *    managerName 管理员姓名，字符串
+     *    managerTel 管理员电话，字符串
+     *    description 备注信息，字符串
+     */
+    save: function (req, res, next, id) {
+        var params = req.body;
+        var name = params.name;
+
+        pool.getConnection(function (err, connection) {
+            connection.query(
+                $sql.queryByName,
+                {app_name: name},
+                function (err, result) {
+                    console.log(result)
+                    if (result && result.length) {
+                        jsonWrite(
+                            res.status(409),
+                            {
+                                errorId: 409,
+                                field: 'name',
+                                message: '已存在相同名称的应用'
+                            }
+                        );
+                    }
+                    else {
+                        var sqlString = $sql.insert;
+                        var values = [name, params.managerName, params.managerTel, params.description, '1']
+                        if (id) {
+                            sqlString = $sql.update;
+                            values = [
+                                {
+                                    app_name: params.name,
+                                    app_manager_name: params.managerName,
+                                    app_manager_tel: params.managerTel,
+                                    app_ext: params.description
+                                },
+                                id
+                            ];
+                        }
+                        connection.query(
+                            sqlString,
+                            values,
+                            function (err, result) {
+                                if (err) {
+                                    jsonWrite(
+                                        res.status(500),
+                                        err
+                                    );
+                                }
+                                else {
+                                    var statusCode = id ? 200 : 201;
+                                    jsonWrite(
+                                        res.status(statusCode),
+                                        result
+                                    );
+                                }
+                            }
+                        );
+                    }
+                    connection.release();
+                }
+            );
+        });
+    }
 };
-
-

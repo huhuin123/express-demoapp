@@ -226,7 +226,6 @@ module.exports = {
                 $sql.queryByName,
                 {app_name: name},
                 function (err, result) {
-                    console.log(result)
                     if (!id && result && result.length) {
                         jsonWrite(
                             res.status(409),
